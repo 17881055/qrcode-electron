@@ -1,0 +1,29 @@
+{
+	// Use IntelliSense to learn about possible Node.js debug attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Launch webpack",
+			"runtimeExecutable": "npm.cmd",
+			"runtimeArgs": [
+				"run-script",
+				"dev"
+			],
+			"timeout": 100000,
+			"port": 5858
+		},
+		{
+			"type": "node", //用于此启动配置的调试器的类型。每安装调试扩展引入一个类型，例如，node对于内置的节点调试器，或php与go对PHP和去扩展。
+			"request": "launch", //此启动配置的请求类型。目前支持的是launch和attach。
+			"name": "Electron Main", //出现在调试启动配置下拉列表中的友好名称。
+			"runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+			"program": "${workspaceRoot}\\src-app\\main.js",
+			"protocol": "legacy"
+
+		}
+	]
+}

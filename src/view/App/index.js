@@ -47,7 +47,7 @@ export default class App extends Component {
                 <Layout>
                     <Header style={{ position: 'fixed', width: '100%' }}>
                         <div className="logo" />
-                        <h3 style={{ color: '#fff' }}>二维码生成器</h3>
+                        <h3 style={{ color: '#fff' }}>圆形二维码生成器</h3>
                     </Header>
                     <Content style={{ padding: '0 50px', marginTop: 64 }}>
                         <div style={{ padding: '80px 20px', minHeight: 610 }}>

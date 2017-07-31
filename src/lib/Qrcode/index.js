@@ -1,6 +1,7 @@
 var extend = require('extend');
 var qrcodeAlgObjCache = [];
-var QRCodeAlg = require('./qrcode');
+import QRCodeClass from './qrcode';
+
 
 /**
 * 计算矩阵点的前景色
@@ -11,13 +12,13 @@ var QRCodeAlg = require('./qrcode');
 * @param {Number} config.options 组件的options
 * @return {String}
 */
-var getForeGround = function(config){
+var getForeGround = function (config) {
     var options = config.options;
-    if( options.pdground && (
-        (config.row > 1 && config.row < 5 && config.col >1 && config.col<5)
-        || (config.row > (config.count - 6) && config.row < (config.count - 2) && config.col >1 && config.col<5)
+    if (options.pdground && (
+        (config.row > 1 && config.row < 5 && config.col > 1 && config.col < 5)
+        || (config.row > (config.count - 6) && config.row < (config.count - 2) && config.col > 1 && config.col < 5)
         || (config.row > 1 && config.row < 5 && config.col > (config.count - 6) && config.col < (config.count - 2))
-    )){
+    )) {
         return options.pdground;
     }
     return options.foreground;
@@ -29,12 +30,12 @@ var getForeGround = function(config){
 * @param  {count} 矩阵大小
 * @return {Boolean}
 */
-var inPositionDetection = function(row, col, count){
-    if(
-        (row<7 && col<7)
+var inPositionDetection = function (row, col, count) {
+    if (
+        (row < 7 && col < 7)
         || (row > (count - 8) && col < 7)
-        || (row < 7 && col >(count - 8) )
-    ){
+        || (row < 7 && col > (count - 8))
+    ) {
         return true;
     }
     return false;
@@ -43,7 +44,7 @@ var inPositionDetection = function(row, col, count){
 * 获取当前屏幕的设备像素比 devicePixelRatio/backingStore
 * @param {context} 当前 canvas 上下文，可以为 window
 */
-var getPixelRatio = function(context) {
+var getPixelRatio = function (context) {
     var backingStore = context.backingStorePixelRatio
         || context.webkitBackingStorePixelRatio
         || context.mozBackingStorePixelRatio
@@ -60,7 +61,7 @@ var getPixelRatio = function(context) {
  * @param  {参数列表} opt 传递参数
  * @return {}
  */
-var qrcode = function(opt) {
+var qrcode = function (opt) {
     if (typeof opt === 'string') { // 只编码ASCII字符串
         opt = {
             text: opt
@@ -68,70 +69,70 @@ var qrcode = function(opt) {
     }
     //设置默认参数
     this.options = extend({}, {
-        text:'',
+        text: '',
         render: '',
         size: 256,
         correctLevel: 3,
         background: '#ffffff',
         foreground: '#000000',
-        image : '',
+        image: '',
         imageSize: 30
     }, opt);
 
-    //使用QRCodeAlg创建二维码结构
-    var qrCodeAlg = null;
-    for(var i = 0, l = qrcodeAlgObjCache.length; i < l; i++){
-        if(qrcodeAlgObjCache[i].text == this.options.text && qrcodeAlgObjCache[i].text.correctLevel == this.options.correctLevel){
-            qrCodeAlg = qrcodeAlgObjCache[i].obj;
+    //使用QRCode创建二维码结构
+    var qrCodeObj = null;
+    for (var i = 0, l = qrcodeAlgObjCache.length; i < l; i++) {
+        if (qrcodeAlgObjCache[i].text == this.options.text && qrcodeAlgObjCache[i].text.correctLevel == this.options.correctLevel) {
+            qrCodeObj = qrcodeAlgObjCache[i].obj;
             break;
         }
     }
 
-    if(i == l){
-      qrCodeAlg = new QRCodeAlg(this.options.text, this.options.correctLevel);
-      qrcodeAlgObjCache.push({text:this.options.text, correctLevel: this.options.correctLevel, obj:qrCodeAlg});
+    if (i == l) {
+        qrCodeObj = new QRCodeClass(this.options.text, this.options.correctLevel);
+        qrcodeAlgObjCache.push({ text: this.options.text, correctLevel: this.options.correctLevel, obj: qrCodeObj });
     }
 
-    if(this.options.render){
-        switch (this.options.render){
+    if (this.options.render) {
+        switch (this.options.render) {
             case 'canvas':
-                return this.createCanvas(qrCodeAlg);
+                return this.createCanvas(qrCodeObj);
             case 'table':
-                return this.createTable(qrCodeAlg);
+                return this.createTable(qrCodeObj);
             case 'svg':
-                return this.createSVG(qrCodeAlg);
+                return this.createSVG(qrCodeObj);
             default:
-                return this.createDefault(qrCodeAlg);
+                return this.createDefault(qrCodeObj);
         }
     }
-    return this.createDefault(qrCodeAlg);
+    return this.createDefault(qrCodeObj);
 };
 
-extend(qrcode.prototype,{
+extend(qrcode.prototype, {
     // default create  canvas -> svg -> table
-    createDefault (qrCodeAlg) {
+    createDefault(qrCodeObj) {
         var canvas = document.createElement('canvas');
-        if(canvas.getContext){
-            return this.createCanvas(qrCodeAlg);
+        if (canvas.getContext) {
+            return this.createCanvas(qrCodeObj);
         }
         var SVG_NS = 'http://www.w3.org/2000/svg';
-        if( !!document.createElementNS && !!document.createElementNS(SVG_NS, 'svg').createSVGRect ){
-            return this.createSVG(qrCodeAlg);
+        if (!!document.createElementNS && !!document.createElementNS(SVG_NS, 'svg').createSVGRect) {
+            return this.createSVG(qrCodeObj);
         }
-        return this.createTable(qrCodeAlg);
+        return this.createTable(qrCodeObj);
     },
     // canvas create
-    createCanvas (qrCodeAlg) {
+    createCanvas(qrCodeObj) {
         var options = this.options;
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
-        var count = qrCodeAlg.getModuleCount();
+        var count = qrCodeObj.getModuleCount();
         var ratio = getPixelRatio(ctx);
         var size = options.size;
         var ratioSize = size * ratio;
         var ratioImgSize = options.imageSize * ratio;
         // preload img
-        var loadImage = function(url,callback){
+        var loadImage = function (url, callback) {
             var img = new Image();
             img.src = url;
             img.onload = function () {
@@ -153,19 +154,19 @@ extend(qrcode.prototype,{
                 var w = (Math.ceil((col + 1) * tileW) - Math.floor(col * tileW));
                 var h = (Math.ceil((row + 1) * tileW) - Math.floor(row * tileW));
                 var foreground = getForeGround({
-                    row : row,
-                    col : col,
-                    count : count,
-                    options : options
+                    row: row,
+                    col: col,
+                    count: count,
+                    options: options
                 });
-                ctx.fillStyle = qrCodeAlg.modules[row][col] ? foreground : options.background;
+                ctx.fillStyle = qrCodeObj.modules[row][col] ? foreground : options.background;
                 ctx.fillRect(Math.round(col * tileW), Math.round(row * tileH), w, h);
             }
         }
-        if(options.image){
-            loadImage(options.image, function(img){
-                var x = ((ratioSize - ratioImgSize)/2).toFixed(2);
-                var y = ((ratioSize - ratioImgSize)/2).toFixed(2);
+        if (options.image) {
+            loadImage(options.image, function (img) {
+                var x = ((ratioSize - ratioImgSize) / 2).toFixed(2);
+                var y = ((ratioSize - ratioImgSize) / 2).toFixed(2);
                 ctx.drawImage(img, x, y, ratioImgSize, ratioImgSize);
             });
         }
@@ -174,17 +175,17 @@ extend(qrcode.prototype,{
         return canvas;
     },
     // table create
-    createTable (qrCodeAlg) {
+    createTable(qrCodeObj) {
         var options = this.options;
-        var count = qrCodeAlg.getModuleCount();
+        var count = qrCodeObj.getModuleCount();
 
         // 计算每个节点的长宽；取整，防止点之间出现分离
         var tileW = Math.floor(options.size / count);
         var tileH = Math.floor(options.size / count);
-        if(tileW <= 0){
+        if (tileW <= 0) {
             tileW = count < 80 ? 2 : 1;
         }
-        if(tileH <= 0){
+        if (tileH <= 0) {
             tileH = count < 80 ? 2 : 1;
         }
 
@@ -198,14 +199,14 @@ extend(qrcode.prototype,{
             s.push(`<tr style="border:0px; margin:0px; padding:0px; height:${tileH}px">`);
             for (var col = 0; col < count; col++) {
                 var foreground = getForeGround({
-                    row : row,
-                    col : col,
-                    count : count,
-                    options : options
+                    row: row,
+                    col: col,
+                    count: count,
+                    options: options
                 });
-                if(qrCodeAlg.modules[row][col]){
+                if (qrCodeObj.modules[row][col]) {
                     s.push(`<td style="border:0px; margin:0px; padding:0px; width:${tileW}px; background-color:${foreground}"></td>`);
-                }else{
+                } else {
                     s.push(`<td style="border:0px; margin:0px; padding:0px; width:${tileW}px; background-color:${options.background}"></td>`);
                 }
             }
@@ -213,12 +214,12 @@ extend(qrcode.prototype,{
         }
         s.push('</table>');
 
-        if(options.image){
+        if (options.image) {
             // 计算表格的总大小
             var width = tileW * count;
             var height = tileH * count;
-            var x = ((width - options.imageSize)/2).toFixed(2);
-            var y = ((height - options.imageSize)/2).toFixed(2);
+            var x = ((width - options.imageSize) / 2).toFixed(2);
+            var y = ((height - options.imageSize) / 2).toFixed(2);
             s.unshift(`<div style='position:relative;
                         width:${width}px;
                         height:${height}px;'>`);
@@ -230,14 +231,14 @@ extend(qrcode.prototype,{
         }
 
         var span = document.createElement('span');
-        span.innerHTML=s.join('');
+        span.innerHTML = s.join('');
 
         return span.firstChild;
     },
     // create svg
-    createSVG (qrCodeAlg){
+    createSVG(qrCodeObj) {
         let options = this.options;
-        let count = qrCodeAlg.getModuleCount();
+        let count = qrCodeObj.getModuleCount();
         let scale = count / options.size;
 
         // create svg
@@ -250,19 +251,19 @@ extend(qrcode.prototype,{
             for (let col = 0; col < count; col++) {
                 let rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                 let foreground = getForeGround({
-                    row : row,
-                    col : col,
-                    count : count,
-                    options : options
+                    row: row,
+                    col: col,
+                    count: count,
+                    options: options
                 });
                 rect.setAttribute('x', col);
                 rect.setAttribute('y', row);
                 rect.setAttribute('width', 1);
                 rect.setAttribute('height', 1);
                 rect.setAttribute('stroke-width', 0);
-                if(qrCodeAlg.modules[row][ col]){
+                if (qrCodeObj.modules[row][col]) {
                     rect.setAttribute('fill', foreground);
-                }else{
+                } else {
                     rect.setAttribute('fill', options.background);
                 }
                 svg.appendChild(rect);
@@ -270,11 +271,11 @@ extend(qrcode.prototype,{
         }
 
         // create image
-        if(options.image){
+        if (options.image) {
             let img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
             img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', options.image);
-            img.setAttribute('x', ((count - options.imageSize * scale)/2).toFixed(2));
-            img.setAttribute('y', ((count - options.imageSize * scale)/2).toFixed(2));
+            img.setAttribute('x', ((count - options.imageSize * scale) / 2).toFixed(2));
+            img.setAttribute('y', ((count - options.imageSize * scale) / 2).toFixed(2));
             img.setAttribute('width', options.imageSize * scale);
             img.setAttribute('height', options.imageSize * scale);
             svg.appendChild(img);
@@ -283,4 +284,5 @@ extend(qrcode.prototype,{
         return svg;
     }
 });
-module.exports = qrcode;
+
+export default qrcode;
